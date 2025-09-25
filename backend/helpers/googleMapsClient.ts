@@ -100,7 +100,7 @@ export async function getPlaceRecommendations(
     const sortedResults = response.data.results
       .filter((place) => place.rating && place.rating > 0)
       .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      .slice(0, 20); // Limit to top 20 results
+      .slice(0, 30); // Limit to top 30 results
 
     return sortedResults.map((place) => ({
       place_id: place.place_id!,

@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "@googlemaps/google-maps-services-js": "^3.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2"
   }
 }

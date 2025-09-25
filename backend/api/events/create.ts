@@ -17,7 +17,7 @@ export async function createEvent(request: CreateEventRequest) {
         share_token: shareToken,
       })
       .select()
-      .single();
+      .single(); // returns back the event as event id is needed for time slots and venues
 
     if (eventError) throw eventError;
 
