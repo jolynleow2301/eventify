@@ -1,4 +1,5 @@
 import { Client } from "@googlemaps/google-maps-services-js";
+import { generateVenueAnalysis } from "./aiClient";
 
 const client = new Client({});
 
@@ -22,6 +23,20 @@ export interface PlaceRecommendation {
   }>;
   opening_hours?: {
     open_now: boolean;
+  };
+  reviews?: Array<{
+    text: string;
+    rating: number;
+    time: number;
+  }>;
+  ai_analysis?: {
+    sentiment_score: number;
+    vibe_match_score: number;
+    budget_match_score: number;
+    atmosphere_match_score: number;
+    summary: string;
+    key_highlights: string[];
+    potential_concerns: string[];
   };
 }
 
@@ -120,6 +135,93 @@ export async function getPlaceRecommendations(
     }));
   } catch (error) {
     console.error("Error getting place recommendations:", error);
+    return [];
+  }
+}
+
+export async function getPlaceDetailsWithReviews(placeId: string) {
+  try {
+    const response = await client.placeDetails({
+      params: {
+        place_id: placeId,
+        fields: [
+          "name",
+          "formatted_address",
+          "rating",
+          "price_level",
+          "reviews",
+          "opening_hours",
+          "formatted_phone_number",
+          "website",
+          "types",
+          "photos",
+        ],
+        key: process.env.GOOGLE_MAPS_API_KEY!,
+      },
+    });
+
+    return response.data.result;
+  } catch (error) {
+    console.error("Error getting place details:", error);
+    return null;
+  }
+}
+
+export async function getAIPoweredRecommendations(
+  location: { lat: number; lng: number },
+  type: "food" | "entertainment",
+  preferences: any,
+  radius: number = 5000
+) {
+  try {
+    // Get initial recommendations
+    const places = await getPlaceRecommendations(location, type, radius);
+
+    // Get detailed reviews for top places
+    const enhancedPlaces = await Promise.all(
+      places.slice(0, 15).map(async (place) => {
+        const details = await getPlaceDetailsWithReviews(place.place_id);
+
+        if (details && details.reviews) {
+          // Analyze with AI
+          const aiAnalysis = await generateVenueAnalysis(
+            {
+              name: place.name,
+              rating: place.rating,
+              price_level: place.price_level,
+              types: place.types,
+              reviews: details.reviews.slice(0, 10), // Analyze top 10 reviews
+            },
+            preferences
+          );
+
+          return {
+            ...place,
+            reviews: details.reviews,
+            ai_analysis: aiAnalysis,
+          };
+        }
+
+        return place;
+      })
+    );
+
+    // Sort by AI recommendation score
+    return enhancedPlaces
+      .filter((place) => place.ai_analysis)
+      .sort((a, b) => {
+        const scoreA =
+          (a.ai_analysis?.vibe_match_score || 0) +
+          (a.ai_analysis?.budget_match_score || 0) +
+          (a.ai_analysis?.atmosphere_match_score || 0);
+        const scoreB =
+          (b.ai_analysis?.vibe_match_score || 0) +
+          (b.ai_analysis?.budget_match_score || 0) +
+          (b.ai_analysis?.atmosphere_match_score || 0);
+        return scoreB - scoreA;
+      });
+  } catch (error) {
+    console.error("Error getting AI-powered recommendations:", error);
     return [];
   }
 }
