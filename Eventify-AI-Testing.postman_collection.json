@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "Eventify AI Backend Testing",
+    "description": "Complete test suite for Eventify's AI-powered venue recommendation system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/places/search-locations?query=test",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "search-locations"],
+          "query": [{ "key": "query", "value": "test" }]
+        }
+      }
+    },
+    {
+      "name": "2. Location Search - Singapore",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/places/search-locations?query=Singapore",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "search-locations"],
+          "query": [{ "key": "query", "value": "Singapore" }]
+        }
+      }
+    },
+    {
+      "name": "3. Regular Recommendations - Food Singapore",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"location\": {\n    \"lat\": 1.3521,\n    \"lng\": 103.8198\n  },\n  \"type\": \"food\",\n  \"radius\": 5000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/places/recommendations",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "recommendations"]
+        }
+      }
+    },
+    {
+      "name": "4. Mock AI Analysis - Budget Casual",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"venue\": {\n    \"name\": \"Joe's Pizza\",\n    \"rating\": 4.3,\n    \"price_level\": 1,\n    \"types\": [\"restaurant\", \"pizza\", \"casual_dining\"]\n  },\n  \"preferences\": {\n    \"budget\": \"budget\",\n    \"vibes\": [\"casual\", \"family-friendly\"],\n    \"atmosphere\": [\"relaxed\"],\n    \"cuisine\": [\"pizza\"]\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/debug/mock",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "debug", "mock"]
+        }
+      }
+    },
+    {
+      "name": "5. AI Recommendations (REAL - Limited by API)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"location\": {\n    \"lat\": 1.3521,\n    \"lng\": 103.8198\n  },\n  \"type\": \"food\",\n  \"preferences\": {\n    \"budget\": \"mid-range\",\n    \"vibes\": [\"casual\"],\n    \"atmosphere\": [\"relaxed\"]\n  },\n  \"radius\": 3000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/places/ai-recommendations",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "ai-recommendations"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}

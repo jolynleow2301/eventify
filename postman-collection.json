@@ -1,0 +1,249 @@
+{
+  "info": {
+    "name": "Eventify AI Backend Testing",
+    "description": "Complete test suite for Eventify's AI-powered venue recommendation system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/places/search-locations?query=test",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "search-locations"],
+          "query": [
+            {
+              "key": "query",
+              "value": "test"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Location Search - Singapore",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/places/search-locations?query=Singapore",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "search-locations"],
+          "query": [
+            {
+              "key": "query",
+              "value": "Singapore"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Location Search - New York",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/places/search-locations?query=New York",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "search-locations"],
+          "query": [
+            {
+              "key": "query",
+              "value": "New York"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. Regular Recommendations - Food Singapore",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"location\": {\n    \"lat\": 1.3521,\n    \"lng\": 103.8198\n  },\n  \"type\": \"food\",\n  \"radius\": 5000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/places/recommendations",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "recommendations"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Regular Recommendations - Entertainment NYC",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"location\": {\n    \"lat\": 40.7128,\n    \"lng\": -74.0060\n  },\n  \"type\": \"entertainment\",\n  \"radius\": 5000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/places/recommendations",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "recommendations"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. Mock AI Analysis - Budget Casual",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"venue\": {\n    \"name\": \"Joe's Pizza\",\n    \"rating\": 4.3,\n    \"price_level\": 1,\n    \"types\": [\"restaurant\", \"pizza\", \"casual_dining\"],\n    \"reviews\": [\n      {\n        \"text\": \"Great casual pizza place! Super friendly staff and quick service. Perfect for families with kids. Very affordable and tasty.\",\n        \"rating\": 5\n      },\n      {\n        \"text\": \"Love this cozy little spot. Great for a quick casual meal. The atmosphere is relaxed and welcoming.\",\n        \"rating\": 4\n      }\n    ]\n  },\n  \"preferences\": {\n    \"budget\": \"budget\",\n    \"vibes\": [\"casual\", \"family-friendly\", \"cozy\"],\n    \"atmosphere\": [\"relaxed\", \"welcoming\"],\n    \"cuisine\": [\"pizza\", \"italian\"]\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/debug/mock",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "debug", "mock"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. Mock AI Analysis - Upscale Romantic",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"venue\": {\n    \"name\": \"Le Bernardin\",\n    \"rating\": 4.7,\n    \"price_level\": 4,\n    \"types\": [\"restaurant\", \"fine_dining\", \"french\", \"seafood\"],\n    \"reviews\": [\n      {\n        \"text\": \"Exceptional fine dining experience. The ambiance is elegant and romantic, perfect for special occasions. Service is impeccable and the seafood is outstanding.\",\n        \"rating\": 5\n      },\n      {\n        \"text\": \"Beautiful romantic setting with sophisticated atmosphere. The tasting menu is expensive but worth every penny for a special celebration.\",\n        \"rating\": 5\n      }\n    ]\n  },\n  \"preferences\": {\n    \"budget\": \"luxury\",\n    \"vibes\": [\"romantic\", \"sophisticated\", \"elegant\"],\n    \"atmosphere\": [\"intimate\", \"upscale\", \"quiet\"],\n    \"cuisine\": [\"french\", \"seafood\", \"fine_dining\"]\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/debug/mock",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "debug", "mock"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. AI Recommendations - Budget Casual (REAL)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"location\": {\n    \"lat\": 1.3521,\n    \"lng\": 103.8198\n  },\n  \"type\": \"food\",\n  \"preferences\": {\n    \"budget\": \"budget\",\n    \"vibes\": [\"casual\", \"family-friendly\"],\n    \"atmosphere\": [\"relaxed\", \"comfortable\"],\n    \"cuisine\": [\"asian\", \"local\"]\n  },\n  \"radius\": 3000\n}"
+        }
+      },
+      "url": {
+        "raw": "{{baseUrl}}/api/places/ai-recommendations",
+        "host": ["{{baseUrl}}"],
+        "path": ["api", "places", "ai-recommendations"]
+      },
+      "response": []
+    },
+    {
+      "name": "9. AI Recommendations - Upscale Romantic (REAL)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"location\": {\n    \"lat\": 40.7128,\n    \"lng\": -74.0060\n  },\n  \"type\": \"food\",\n  \"preferences\": {\n    \"budget\": \"upscale\",\n    \"vibes\": [\"romantic\", \"sophisticated\"],\n    \"atmosphere\": [\"intimate\", \"elegant\", \"quiet\"],\n    \"cuisine\": [\"french\", \"italian\", \"fine_dining\"]\n  },\n  \"radius\": 5000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/places/ai-recommendations",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "ai-recommendations"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10. AI Recommendations - Entertainment Fun (REAL)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"location\": {\n    \"lat\": 1.3521,\n    \"lng\": 103.8198\n  },\n  \"type\": \"entertainment\",\n  \"preferences\": {\n    \"budget\": \"mid-range\",\n    \"vibes\": [\"fun\", \"lively\", \"energetic\"],\n    \"atmosphere\": [\"vibrant\", \"spacious\"],\n    \"activityType\": [\"arcade\", \"bowling\", \"karaoke\"]\n  },\n  \"radius\": 5000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/places/ai-recommendations",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "places", "ai-recommendations"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11. Real AI Debug (USE SPARINGLY - API LIMITS)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/debug",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "debug"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
