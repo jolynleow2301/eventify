@@ -12,8 +12,6 @@ export async function createEvent(request: CreateEventRequest) {
       .insert({
         title: request.title,
         description: request.description,
-        creator_name: request.creator_name,
-        creator_email: request.creator_email,
         share_token: shareToken,
       })
       .select()

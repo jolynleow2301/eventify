@@ -2,8 +2,6 @@ export interface Event {
   id: string;
   title: string;
   description?: string;
-  creator_email?: string;
-  creator_name?: string;
   share_token: string;
   status: "active" | "completed" | "cancelled";
   created_at: string;
@@ -104,8 +102,6 @@ export interface EnhancedPlaceRecommendation extends PlaceRecommendation {
 export interface CreateEventRequest {
   title: string;
   description?: string;
-  creator_name?: string;
-  creator_email?: string;
   time_slots: string[]; // ISO date strings
   venues: {
     name: string;
