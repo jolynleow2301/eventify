@@ -341,7 +341,7 @@ export default function VenueSelector({
               }
               className="mr-3 w-4 h-4 text-blue-600"
             />
-            <span className="text-lg">🍽️ Food Places</span>
+            <span className="text-lg text-gray-800">🍽️ Food Places</span>
           </label>
           <label className="flex items-center cursor-pointer">
             <input
@@ -353,7 +353,7 @@ export default function VenueSelector({
               }
               className="mr-3 w-4 h-4 text-blue-600"
             />
-            <span className="text-lg">🎮 Outing Places</span>
+            <span className="text-lg text-gray-800">🎮 Outing Places</span>
           </label>
         </div>
       </div>
@@ -370,7 +370,7 @@ export default function VenueSelector({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Budget Range
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 text-gray-900">
               {budgetOptions.map((option) => (
                 <button
                   key={option.value}
@@ -401,7 +401,7 @@ export default function VenueSelector({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Desired Vibes (select multiple)
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 text-gray-700">
               {vibeOptions.map((vibe) => (
                 <button
                   key={vibe}
@@ -424,7 +424,7 @@ export default function VenueSelector({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Preferred Atmosphere
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 text-gray-700">
               {atmosphereOptions.map((atmosphere) => (
                 <button
                   key={atmosphere}
@@ -448,7 +448,7 @@ export default function VenueSelector({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Cuisine Preferences
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 text-gray-700">
                 {cuisineOptions.map((cuisine) => (
                   <button
                     key={cuisine}
