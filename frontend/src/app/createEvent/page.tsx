@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreateEventRequest } from "../../../../types/event";
 import VenueSelector from "../../components/VenueSelector";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -18,9 +20,12 @@ export default function CreateEventPage() {
     venues: [],
   });
   const [newTimeSlot, setNewTimeSlot] = useState("");
-  const [dateRange, setDateRange] = useState({
-    startDate: "",
-    endDate: "",
+  const [dateRange, setDateRange] = useState<{
+    startDate: Date | null;
+    endDate: Date | null;
+  }>({
+    startDate: null,
+    endDate: null,
   });
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [dailyTimeSlots, setDailyTimeSlots] = useState<{
@@ -28,6 +33,67 @@ export default function CreateEventPage() {
   }>({});
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<"select" | "deselect">("select");
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [locationError, setLocationError] = useState<string>("");
+  const [gettingLocation, setGettingLocation] = useState(false);
+  const [showLocationPermissionDialog, setShowLocationPermissionDialog] =
+    useState(false);
+
+  // Function to request location permission
+  const requestLocationPermission = () => {
+    setShowLocationPermissionDialog(true);
+  };
+
+  // Function to get user's current location
+  const getCurrentLocation = () => {
+    setShowLocationPermissionDialog(false);
+    setGettingLocation(true);
+    setLocationError("");
+
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      setGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setUserLocation(location);
+        setGettingLocation(false);
+        console.log("User location:", location);
+      },
+      (error) => {
+        let errorMessage = "Unable to get your location";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage =
+              "Location permission denied. Please enable location access in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out";
+            break;
+        }
+        setLocationError(errorMessage);
+        setGettingLocation(false);
+        console.error("Location error:", error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
 
   // Predefined time slots (24-hour format)
   const availableTimeSlots = [
@@ -82,9 +148,6 @@ export default function CreateEventPage() {
     }
 
     console.log("Generated dates (inclusive range):", dates);
-    console.log(
-      `Expected range: ${dateRange.startDate} to ${dateRange.endDate} (inclusive)`
-    );
     return dates;
   };
 
@@ -354,453 +417,477 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="w-full max-w-[95%] mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="text-center p-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-            <h1 className="text-4xl font-bold mb-2">Create New Event</h1>
-            <p className="text-indigo-100 text-lg">
-              Plan your hangout or dining experience with friends
-            </p>
-          </div>
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
+      <div className="text-center p-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex-shrink-0">
+        <h1 className="text-3xl font-bold mb-2">Create New Event</h1>
+      </div>
 
-          {/* Tab Navigation */}
-          <div className="border-b bg-gray-50">
-            <div className="flex">
-              <button
-                type="button"
-                onClick={() => setActiveTab("details")}
-                className={`flex-1 py-4 px-6 text-center font-medium transition-colors relative ${
-                  activeTab === "details"
-                    ? "bg-white border-b-2 border-indigo-600 text-indigo-600"
-                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+      {/* Tab Navigation */}
+      <div className="border-b bg-gray-50 flex-shrink-0">
+        <div className="flex">
+          <button
+            type="button"
+            onClick={() => setActiveTab("details")}
+            className={`flex-1 py-2 px-4 text-center font-medium transition-colors relative ${
+              activeTab === "details"
+                ? "bg-white border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+            }`}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <span
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  getTabStatus("details") === "completed"
+                    ? "bg-green-500 text-white"
+                    : activeTab === "details"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-300 text-gray-600"
                 }`}
               >
-                <div className="flex items-center justify-center space-x-2">
-                  <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      getTabStatus("details") === "completed"
-                        ? "bg-green-500 text-white"
-                        : activeTab === "details"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-300 text-gray-600"
-                    }`}
-                  >
-                    {getTabStatus("details") === "completed" ? "✓" : "1"}
-                  </span>
-                  <span className="text-lg">Event Details</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("timeslots")}
-                className={`flex-1 py-4 px-6 text-center font-medium transition-colors relative ${
-                  activeTab === "timeslots"
-                    ? "bg-white border-b-2 border-indigo-600 text-indigo-600"
-                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-                }`}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      getTabStatus("timeslots") === "completed"
-                        ? "bg-green-500 text-white"
-                        : activeTab === "timeslots"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-300 text-gray-600"
-                    }`}
-                  >
-                    {getTabStatus("timeslots") === "completed" ? "✓" : "2"}
-                  </span>
-                  <span className="text-lg">Time Slots</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("venues")}
-                className={`flex-1 py-4 px-6 text-center font-medium transition-colors relative ${
-                  activeTab === "venues"
-                    ? "bg-white border-b-2 border-indigo-600 text-indigo-600"
-                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-                }`}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      getTabStatus("venues") === "completed"
-                        ? "bg-green-500 text-white"
-                        : activeTab === "venues"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-300 text-gray-600"
-                    }`}
-                  >
-                    {getTabStatus("venues") === "completed" ? "✓" : "3"}
-                  </span>
-                  <span className="text-lg">Venue Options</span>
-                </div>
-              </button>
+                {getTabStatus("details") === "completed" ? "✓" : "1"}
+              </span>
+              <span className="text-base">Event Details</span>
             </div>
-          </div>
+          </button>
 
-          <form onSubmit={handleSubmit} className="p-8">
-            {/* Tab Content */}
-            <div className="min-h-[500px]">
-              {/* Event Details Tab */}
-              {activeTab === "details" && (
-                <div className="space-y-6 animate-fadeIn">
-                  <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                      📝 Include Event Details
-                    </h2>
-                    <p className="text-gray-600">
-                      Start by giving your event a name and description
+          <button
+            type="button"
+            onClick={() => setActiveTab("timeslots")}
+            className={`flex-1 py-2 px-4 text-center font-medium transition-colors relative ${
+              activeTab === "timeslots"
+                ? "bg-white border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+            }`}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <span
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  getTabStatus("timeslots") === "completed"
+                    ? "bg-green-500 text-white"
+                    : activeTab === "timeslots"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                {getTabStatus("timeslots") === "completed" ? "✓" : "2"}
+              </span>
+              <span className="text-base">Time Slots</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("venues")}
+            className={`flex-1 py-2 px-4 text-center font-medium transition-colors relative ${
+              activeTab === "venues"
+                ? "bg-white border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+            }`}
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <span
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  getTabStatus("venues") === "completed"
+                    ? "bg-green-500 text-white"
+                    : activeTab === "venues"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
+                {getTabStatus("venues") === "completed" ? "✓" : "3"}
+              </span>
+              <span className="text-base">Venue Options</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+        {/* Tab Content */}
+        <div
+          className={`flex-1 p-6 ${
+            activeTab === "venues" ? "flex flex-col min-h-0" : "overflow-y-auto"
+          }`}
+        >
+          {/* Event Details Tab */}
+          {activeTab === "details" && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="block text-xl font-bold text-gray-900 mb-2">
+                    Event Title *
+                  </h3>
+                  <input
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
+                    className="form-input text-lg"
+                    placeholder="e.g., Weekend Dinner Plans, Birthday Celebration, Team Outing..."
+                  />
+                </div>
+
+                <div>
+                  <h3 className="block text-xl font-bold text-gray-900 mb-2">
+                    Description
+                  </h3>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    className="form-textarea"
+                    rows={4}
+                    placeholder="Add some details about your event... What's the occasion? Any special requirements?"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Time Slots Tab */}
+          {activeTab === "timeslots" && (
+            <div className="space-y-6 animate-fadeIn">
+              {/* Date Range Selection */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Select Date Range
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-xl">
+                  <div>
+                    <p className="block text-md font-medium text-gray-700 mb-2">
+                      Start Date
                     </p>
+                    <DatePicker
+                      selected={dateRange.startDate}
+                      onChange={(date) => {
+                        console.log("Start date changed:", date);
+                        setDateRange((prev) => ({
+                          ...prev,
+                          startDate: date,
+                        }));
+                      }}
+                      placeholderText="dd/MM/yyyy"
+                      dateFormat="dd/MM/yyyy"
+                      minDate={new Date()}
+                      className="form-input w-full"
+                    />
+                  </div>
+                  <div>
+                    <p className="block text-md font-medium text-gray-700 mb-2">
+                      End Date
+                    </p>
+                    <DatePicker
+                      selected={dateRange.endDate}
+                      onChange={(date) => {
+                        console.log("End date changed:", date);
+                        setDateRange((prev) => ({
+                          ...prev,
+                          endDate: date,
+                        }));
+                      }}
+                      placeholderText="dd/MM/yyyy"
+                      dateFormat="dd/MM/yyyy"
+                      minDate={dateRange.startDate || new Date()}
+                      className="form-input w-full"
+                    />
+                  </div>
+                </div>
+                {dateRange.startDate && dateRange.endDate && (
+                  <div className="mt-4 p-3 bg-blue-100 rounded-lg max-w-xl">
+                    <p className="text-sm text-blue-800">
+                      Selected range:{" "}
+                      {dateRange.startDate.toLocaleDateString("en-GB")} to{" "}
+                      {dateRange.endDate.toLocaleDateString("en-GB")} (
+                      {getDatesInRange().length} days)
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Time Slots Selection */}
+              {dateRange.startDate && dateRange.endDate && (
+                <div
+                  className="space-y-4 p-6 border border-gray-200 rounded-xl bg-green-50"
+                  onMouseUp={handleMouseUp}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        Select Time Slots for Each Day
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Click and drag to select multiple time slots, or click
+                        individual slots. Past times are disabled.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={selectAllTimeSlots}
+                        className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        Select All Future Times
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearAllTimeSlots}
+                        className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                      >
+                        Clear All
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Event Title *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.title}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            title: e.target.value,
-                          }))
-                        }
-                        className="form-input text-lg"
-                        placeholder="e.g., Weekend Dinner Plans, Birthday Celebration, Team Outing..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Description
-                      </label>
-                      <textarea
-                        value={formData.description}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            description: e.target.value,
-                          }))
-                        }
-                        className="form-textarea"
-                        rows={4}
-                        placeholder="Add some details about your event... What's the occasion? Any special requirements?"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Time Slots Tab */}
-              {activeTab === "timeslots" && (
-                <div className="space-y-6 animate-fadeIn">
-                  <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                      ⏰ When should your event happen?
-                    </h2>
-                    <p className="text-gray-600">
-                      Select date range and times for people to vote on
-                    </p>
-                  </div>
-
-                  {/* Date Range Selection */}
-                  <div className="space-y-4 p-6 border border-gray-200 rounded-xl bg-blue-50">
-                    <h4 className="font-semibold text-gray-900 text-lg">
-                      Step 1: Select Date Range
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Start Date
-                        </label>
-                        <input
-                          type="date"
-                          value={dateRange.startDate}
-                          onChange={(e) => {
-                            console.log("Start date changed:", e.target.value);
-                            setDateRange((prev) => ({
-                              ...prev,
-                              startDate: e.target.value,
-                            }));
-                          }}
-                          className="form-input"
-                          min={new Date().toISOString().split("T")[0]}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          End Date
-                        </label>
-                        <input
-                          type="date"
-                          value={dateRange.endDate}
-                          onChange={(e) => {
-                            console.log("End date changed:", e.target.value);
-                            setDateRange((prev) => ({
-                              ...prev,
-                              endDate: e.target.value,
-                            }));
-                          }}
-                          className="form-input"
-                          min={
-                            dateRange.startDate ||
-                            new Date().toISOString().split("T")[0]
-                          }
-                        />
-                      </div>
-                    </div>
-                    {dateRange.startDate && dateRange.endDate && (
-                      <div className="mt-4 p-3 bg-blue-100 rounded-lg">
-                        <p className="text-sm text-blue-800">
-                          Selected range: {dateRange.startDate} to{" "}
-                          {dateRange.endDate} ({getDatesInRange().length} days)
+                    {getDatesInRange().length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">
+                          Please select both start and end dates to see
+                          available time slots.
                         </p>
                       </div>
-                    )}
-                  </div>
+                    ) : (
+                      getDatesInRange().map((date) => {
+                        const dateObj = new Date(date + "T12:00:00");
+                        const selectedCount = dailyTimeSlots[date]?.length || 0;
+                        const futureSlots = availableTimeSlots.filter(
+                          (time) => !isTimeSlotInPast(date, time)
+                        );
 
-                  {/* Time Slots Selection */}
-                  {dateRange.startDate && dateRange.endDate && (
-                    <div
-                      className="space-y-4 p-6 border border-gray-200 rounded-xl bg-green-50"
-                      onMouseUp={handleMouseUp}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h4 className="font-semibold text-gray-900 text-lg">
-                            Step 2: Select Time Slots for Each Day
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Click and drag to select multiple time slots, or
-                            click individual slots. Past times are disabled.
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={selectAllTimeSlots}
-                            className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                        return (
+                          <div
+                            key={date}
+                            className="space-y-3 p-4 border border-gray-200 rounded-lg bg-white"
                           >
-                            Select All Future Times
-                          </button>
-                          <button
-                            type="button"
-                            onClick={clearAllTimeSlots}
-                            className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
-                          >
-                            Clear All
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-6">
-                        {getDatesInRange().length === 0 ? (
-                          <div className="text-center py-8">
-                            <p className="text-gray-500">
-                              Please select both start and end dates to see
-                              available time slots.
-                            </p>
-                          </div>
-                        ) : (
-                          getDatesInRange().map((date) => {
-                            const dateObj = new Date(date + "T12:00:00");
-                            const selectedCount =
-                              dailyTimeSlots[date]?.length || 0;
-                            const futureSlots = availableTimeSlots.filter(
-                              (time) => !isTimeSlotInPast(date, time)
-                            );
-
-                            return (
-                              <div
-                                key={date}
-                                className="space-y-3 p-4 border border-gray-200 rounded-lg bg-white"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <h5 className="font-medium text-gray-800">
-                                    {dateObj.toLocaleDateString("en-US", {
-                                      weekday: "long",
-                                      month: "long",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    })}
-                                  </h5>
-                                  <div className="flex items-center gap-3">
-                                    <span className="text-sm text-gray-500">
-                                      {selectedCount} of {futureSlots.length}{" "}
-                                      selected
-                                    </span>
-                                    <div className="flex gap-1">
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          selectAllTimeSlotsForDate(date)
-                                        }
-                                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                                        disabled={futureSlots.length === 0}
-                                      >
-                                        Select All
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          clearAllTimeSlotsForDate(date)
-                                        }
-                                        className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-                                      >
-                                        Clear
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Time slots in vertical columns */}
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-                                  {availableTimeSlots.map((time) => {
-                                    const isSelected = isTimeSlotSelected(
-                                      date,
-                                      time
-                                    );
-                                    const isPast = isTimeSlotInPast(date, time);
-                                    const [hours] = time.split(":");
-                                    const displayTime = `${
-                                      parseInt(hours) === 0
-                                        ? 12
-                                        : parseInt(hours) > 12
-                                        ? parseInt(hours) - 12
-                                        : hours
-                                    }:00 ${
-                                      parseInt(hours) >= 12 ? "PM" : "AM"
-                                    }`;
-
-                                    return (
-                                      <button
-                                        key={`${date}-${time}`}
-                                        type="button"
-                                        onMouseDown={() =>
-                                          handleMouseDown(date, time)
-                                        }
-                                        onMouseEnter={() =>
-                                          handleMouseEnter(date, time)
-                                        }
-                                        disabled={isPast}
-                                        className={`p-2 rounded-lg text-xs font-medium transition-colors select-none ${
-                                          isPast
-                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                                            : isSelected
-                                            ? "bg-green-600 text-white shadow-md"
-                                            : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-                                        }`}
-                                        title={
-                                          isPast
-                                            ? "This time has already passed"
-                                            : ""
-                                        }
-                                      >
-                                        <div>
-                                          {displayTime}
-                                          {isPast && (
-                                            <div className="text-xs opacity-75">
-                                              (Past)
-                                            </div>
-                                          )}
-                                        </div>
-                                      </button>
-                                    );
-                                  })}
+                            <div className="flex items-center justify-between">
+                              <h5 className="font-medium text-gray-800">
+                                {dateObj.toLocaleDateString("en-US", {
+                                  weekday: "long",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </h5>
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm text-gray-500">
+                                  {selectedCount} of {futureSlots.length}{" "}
+                                  selected
+                                </span>
+                                <div className="flex gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      selectAllTimeSlotsForDate(date)
+                                    }
+                                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                    disabled={futureSlots.length === 0}
+                                  >
+                                    Select All
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      clearAllTimeSlotsForDate(date)
+                                    }
+                                    className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                                  >
+                                    Clear
+                                  </button>
                                 </div>
                               </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                            </div>
 
-              {/* Venues Tab */}
-              {activeTab === "venues" && (
-                <div className="space-y-6 animate-fadeIn">
-                  <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                      📍 Where should your event take place?
-                    </h2>
-                    <p className="text-gray-600">
-                      Find and select venues using our AI-powered
-                      recommendations
-                    </p>
+                            {/* Time slots in vertical columns */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+                              {availableTimeSlots.map((time) => {
+                                const isSelected = isTimeSlotSelected(
+                                  date,
+                                  time
+                                );
+                                const isPast = isTimeSlotInPast(date, time);
+                                const [hours] = time.split(":");
+                                const displayTime = `${
+                                  parseInt(hours) === 0
+                                    ? 12
+                                    : parseInt(hours) > 12
+                                    ? parseInt(hours) - 12
+                                    : hours
+                                }:00 ${parseInt(hours) >= 12 ? "PM" : "AM"}`;
+
+                                return (
+                                  <button
+                                    key={`${date}-${time}`}
+                                    type="button"
+                                    onMouseDown={() =>
+                                      handleMouseDown(date, time)
+                                    }
+                                    onMouseEnter={() =>
+                                      handleMouseEnter(date, time)
+                                    }
+                                    disabled={isPast}
+                                    className={`p-2 rounded-lg text-xs font-medium transition-colors select-none ${
+                                      isPast
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                                        : isSelected
+                                        ? "bg-green-600 text-white shadow-md"
+                                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                                    }`}
+                                    title={
+                                      isPast
+                                        ? "This time has already passed"
+                                        : ""
+                                    }
+                                  >
+                                    <div>
+                                      {displayTime}
+                                      {isPast && (
+                                        <div className="text-xs opacity-75">
+                                          (Past)
+                                        </div>
+                                      )}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
-
-                  <VenueSelector
-                    onVenuesSelected={handleVenuesSelected}
-                    selectedVenues={formData.venues}
-                  />
                 </div>
               )}
             </div>
+          )}
 
-            {/* Navigation and Submit */}
-            <div className="flex items-center justify-between pt-8 border-t">
-              <button
-                type="button"
-                onClick={prevTab}
-                disabled={activeTab === "details"}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                  activeTab === "details"
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-300 text-gray-700 hover:bg-gray-400"
-                }`}
-              >
-                Back
-              </button>
-
-              <div className="text-center">
-                <span className="text-sm text-gray-600">
-                  Step{" "}
-                  {activeTab === "details"
-                    ? 1
-                    : activeTab === "timeslots"
-                    ? 2
-                    : 3}{" "}
-                  of 3
-                </span>
-              </div>
-
-              {activeTab !== "venues" ? (
-                <button
-                  type="button"
-                  onClick={nextTab}
-                  className="px-6 py-3 rounded-lg font-medium transition-colors bg-indigo-600 text-white hover:bg-indigo-700"
-                >
-                  Next
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={
-                    loading ||
-                    !formData.title ||
-                    formData.time_slots.length === 0 ||
-                    formData.venues.length === 0
-                  }
-                  className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold shadow-lg hover:shadow-xl"
-                >
-                  {loading ? "Creating Event..." : "Create Event & Get Link"}
-                </button>
-              )}
+          {/* Venues Tab */}
+          {activeTab === "venues" && (
+            <div className="flex flex-col flex-1 min-h-0 animate-fadeIn">
+              <VenueSelector
+                onVenuesSelected={handleVenuesSelected}
+                selectedVenues={formData.venues}
+                userLocation={userLocation}
+              />
             </div>
-          </form>
+          )}
         </div>
-      </div>
+
+        {/* Navigation and Submit */}
+        <div className="flex items-center justify-between border-t flex-shrink-0">
+          <button
+            type="button"
+            onClick={prevTab}
+            disabled={activeTab === "details"}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === "details"
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gray-300 text-gray-700 hover:bg-gray-400"
+            }`}
+          >
+            Back
+          </button>
+
+          <div className="text-center">
+            <span className="text-sm text-gray-600">
+              Step{" "}
+              {activeTab === "details" ? 1 : activeTab === "timeslots" ? 2 : 3}{" "}
+              of 3
+            </span>
+          </div>
+
+          {activeTab !== "venues" ? (
+            <button
+              type="button"
+              onClick={nextTab}
+              className="px-6 py-2 rounded-lg font-medium transition-colors bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={
+                loading ||
+                !formData.title ||
+                formData.time_slots.length === 0 ||
+                formData.venues.length === 0
+              }
+              className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold shadow-lg hover:shadow-xl"
+            >
+              {loading ? "Creating Event..." : "Create Event & Get Link"}
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* Location Permission Dialog */}
+      {showLocationPermissionDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-start mb-4">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-6 w-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Share Your Location
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  This website would like to access your current location to
+                  provide personalized venue recommendations near you.
+                </p>
+                <p className="text-xs text-gray-500 mb-4">
+                  Your location will only be used to find nearby venues and
+                  won't be stored or shared with third parties.
+                </p>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors"
+                  >
+                    Allow
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowLocationPermissionDialog(false)}
+                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         @keyframes fadeIn {

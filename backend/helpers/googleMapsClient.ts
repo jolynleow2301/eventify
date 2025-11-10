@@ -130,7 +130,11 @@ export async function getPlaceRecommendations(
           lng: place.geometry!.location.lng,
         },
       },
-      photos: place.photos?.slice(0, 1),
+      photos: place.photos?.slice(0, 5).map((photo) => ({
+        photo_reference: photo.photo_reference,
+        height: photo.height,
+        width: photo.width,
+      })),
       opening_hours: place.opening_hours,
     }));
   } catch (error) {
